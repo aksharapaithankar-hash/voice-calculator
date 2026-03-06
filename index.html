@@ -1,0 +1,159 @@
+
+<head>
+    <title>Voice Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #e0f7fa;
+            padding: 50px;
+        }
+        h1 { color: #00796b; }
+        #status { font-size: 18px; margin-top: 20px; }
+        #result { font-size: 22px; color: #d32f2f; margin-top: 30px; white-space: pre-line; }
+    </style>
+</head>
+<body>
+    <h1>Voice Calculator</h1>
+
+    <select onchange="changeTheme(this.value)">
+<option value="blue">Blue</option>
+<option value="purple">Purple</option>
+<option value="green">Green</option>
+<option value="dark">Dark Mode</option>
+</select>
+
+    <button onclick="startListening()">🎤 Speak</button>
+<button onclick="stopListening()">⏹ Stop</button>
+<button onclick="clearResult()">🗑 Clear</button>
+
+    <p>Speak a calculation like "5 plus 3" or "ten divided by 2"</p>
+    <div id="status">Status: Not listening</div>
+    <div id="result"></div>
+
+    <h3>History</h3>
+<div id="history"></div>
+
+    <script>
+        const numberWords = {
+            zero:0, one:1, two:2, three:3, four:4, five:5,
+            six:6, seven:7, eight:8, nine:9, ten:10,
+            eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15,
+            sixteen:16, seventeen:17, eighteen:18, nineteen:19, twenty:20,
+            thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80, ninety:90
+        };
+
+        function parseNumber(str) {
+            const words = str.trim().split(/\s+/);
+            if(words.length===1){
+                const word = words[0].toLowerCase();
+                if(!isNaN(word)) return parseFloat(word);
+                return numberWords[word] ?? null;
+            } else if(words.length===2){
+                const tens = numberWords[words[0].toLowerCase()];
+                const units = numberWords[words[1].toLowerCase()];
+                if(tens!==undefined && units!==undefined && tens>=20 && tens%10===0 && units<10){
+                    return tens+units;
+                }
+            }
+            return null;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(!SpeechRecognition){
+            document.getElementById("result").innerText="Sorry, your browser does not support voice recognition!";
+        } else {
+            const recognition = new SpeechRecognition();
+            recognition.lang='en-US';
+            recognition.continuous=true; // keep listening
+            recognition.interimResults=false;
+
+            function startListening(){
+    recognition.start();
+}
+
+function stopListening(){
+    recognition.stop();
+}
+            recognition.onstart = ()=>document.getElementById("status").innerText="Status: Listening...";
+            recognition.onend = ()=>{
+    document.getElementById("status").innerText = "Status: Not listening";
+};
+            recognition.onerror = (e)=>document.getElementById("status").innerText="Error: "+e.error;
+
+            recognition.onresult = (event)=>{
+
+const spoken = event.results[event.results.length-1][0].transcript
+.toLowerCase().trim();
+
+document.getElementById("result").innerText =
+`Result: ${expression} = ${answer}`;
+
+document.getElementById("history").innerHTML +=
+`<div>${expression} = ${answer}</div>`;
+
+speakResult("The answer is " + answer);
+
+let expression = spoken
+.replace(/plus|add/g,"+")
+.replace(/minus|subtract/g,"-")
+.replace(/times|multiply|time/g,"*")
+.replace(/divide|over/g,"/");
+
+try{
+
+const answer = eval(expression);
+
+document.getElementById("result").innerText =
+`Result: ${expression} = ${answer}`;
+
+}
+
+catch{
+
+document.getElementById("result").innerText =
+"Could not calculate";
+
+}
+
+};
+        }
+        function changeTheme(color){
+
+if(color=="blue"){
+document.body.style.background="linear-gradient(135deg,#4facfe,#00f2fe)";
+}
+
+if(color=="purple"){
+document.body.style.background="linear-gradient(135deg,#a18cd1,#fbc2eb)";
+}
+
+if(color=="green"){
+document.body.style.background="linear-gradient(135deg,#43e97b,#38f9d7)";
+}
+
+if(color=="dark"){
+document.body.style.background="#121212";
+document.body.style.color="white";
+}
+
+}
+
+function clearResult(){
+
+document.getElementById("result").innerText="";
+document.getElementById("status").innerText="Status: Not listening";
+
+}
+
+function speakResult(text){
+
+const speech = new SpeechSynthesisUtterance(text);
+speech.lang="en-US";
+
+window.speechSynthesis.speak(speech);
+
+}
+    </script>
+</body>
+</html>
